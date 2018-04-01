@@ -52,7 +52,7 @@ class DevelopmentConfig(Config):
     #                           'sqlite:///' + os.path.join(BASEDIR, 'data-dev.sqlite')
     # 使用mysql
     # 配置mysql数据库:开发中使用真实IP
-    SQLALCHEMY_DATABASE_URI = 'mysql://root:mysql@127.0.0.1:3306/ihome'
+    SQLALCHEMY_DATABASE_URI = 'mysql://root:hitzzy@127.0.0.1:3306/ihome'
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
 
@@ -61,14 +61,14 @@ class TestingConfig(Config):
     TESTING = True
     # SQLALCHEMY_DATABASE_URI = os.environ.get('TEST_DATABASE_URL') or \
     #                           'sqlite:///' + os.path.join(BASEDIR, 'data-test.sqlite')
-    SQLALCHEMY_DATABASE_URI = 'mysql://root:mysql@127.0.0.1:3306/ihome_test'
+    SQLALCHEMY_DATABASE_URI = 'mysql://root:hitzzy@127.0.0.1:3306/ihome_test'
 
 
 class ProductionConfig(Config):
     """生产环境配置"""
     # SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or \
     #                           'sqlite:///' + os.path.join(BASEDIR, 'data.sqlite')
-    SQLALCHEMY_DATABASE_URI = 'mysql://root:mysql@127.0.0.1:3306/ihome_production'
+    SQLALCHEMY_DATABASE_URI = 'mysql://root:hitzzy@127.0.0.1:3306/ihome_production'
 
 
 config = {
