@@ -1,4 +1,4 @@
-"""部门管理模块"""
+"""用户模块"""
 '''
 @Time    : 2018/4/1 上午10:38
 @Author  : scrappy_zhang
@@ -9,4 +9,4 @@ from flask import Blueprint
 
 user = Blueprint('user', __name__)
 
-from app.user import views
+from app.user import verifycode, profile
