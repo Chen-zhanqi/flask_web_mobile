@@ -14,6 +14,7 @@ from flask import request, make_response, jsonify, abort
 
 from app import redis_store
 from app import constants
+from app.models import User
 
 import logging
 import re
@@ -72,6 +73,14 @@ def send_sms_code():
     # 3. 验证手机号是否合法
     if not re.match(r"^1[34578][0-9]{9}$", mobile):
         return jsonify(errno=RET.PARAMERR, errmsg="手机号不合法")
+    # 3.1 验证手机号是否已注册
+    try:
+        user = User.query.filter_by(mobile=mobile).first()
+    except Exception as e:
+        logging.error(e)
+    else:
+        if user is not None:
+            return jsonify(errno=RET.DBERR, errmsg='该手机已注册')
 
     # 4. 验证图片码
     try:
