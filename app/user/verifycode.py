@@ -16,6 +16,9 @@ from app import redis_store
 from app import constants
 
 import logging
+import re
+import random
+import json
 
 
 @user.route('/image_code')
@@ -51,3 +54,47 @@ def get_image_code():
     response = make_response(image)
     response.headers['Content-Type'] = 'image/jpg'
     return response
+
+
+@user.route("/smscode/", methods=["POST"])
+def send_sms_code():
+    # 1.获取参数
+    # image_code = request.args['text']
+    # image_code_id = request.args['id']
+    param_dict = json.loads(request.get_data())
+    image_code = param_dict['text']
+    image_code_id = param_dict['id']
+    mobile = param_dict['mobile']
+    # 2.验证参数是否为空
+    if not all([mobile, image_code, image_code_id]):
+        return jsonify(errno=RET.PARAMERR, errmsg="参数错误")
+
+    # 3. 验证手机号是否合法
+    if not re.match(r"^1[34578][0-9]{9}$", mobile):
+        return jsonify(errno=RET.PARAMERR, errmsg="手机号不合法")
+
+    # 4. 验证图片码
+    try:
+        real_image_code = redis_store.get('ImageCode_' + image_code_id)
+    except Exception as e:
+        logging.error(e)
+        return jsonify(errno=RET.DBERR, errmsg="查询数据异常")
+
+    # 4.1 判断验证码是否存在
+    if not real_image_code:
+        return jsonify(errno=RET.DATAERR, errmsg="验证码已过期")
+    # 4.2 比较传入的验证码和本地验证码是否一致
+    if image_code.lower() != real_image_code.lower():
+        return jsonify(errno=RET.DATAERR, errmsg="图片验证码错误")
+
+    # 5.删除本地图片验证码
+    try:
+        redis_store.delete("ImageCode_"+image_code_id)
+    except Exception as e:
+        logging.error(e)
+        return jsonify(errno=RET.DATAERR, errmsg="删除本地图片验证码失败")
+    # 6. 生成短信验证码
+    sms_code = "%04d" %random.randint(0, 10000)
+    print("要发送的短信验证码:", sms_code)
+    # 7.发送短信验证码，由云通讯完成
+    return jsonify(errno=RET.OK, errmsg="发送验证码成功")

@@ -124,3 +124,4 @@ venv.bak/
 .idea/
 /app/static/js/._.DS_Store
 /dump.rdb
+._.DS_Store

@@ -28,7 +28,8 @@ def login_required(f):
     :param f: 其装饰的函数
     :return: 装饰器
     """
-
+    # 装饰器会修改被装饰函数所在源代码文件的__name__属性
+    # 因此需要functools.wraps装饰装饰器，保留被装饰函数所在源代码文件的__name__属性
     @functools.wraps(f)
     def wrapper(*args, **kwargs):
         # 从session中获取当前用户id

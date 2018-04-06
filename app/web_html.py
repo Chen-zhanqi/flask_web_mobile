@@ -5,7 +5,8 @@
 @File    : web_html.py
 '''
 
-from flask import Blueprint, current_app
+from flask import Blueprint, current_app, make_response
+from flask_wtf.csrf import generate_csrf
 
 html_blue = Blueprint('html_blue', __name__)
 
@@ -24,6 +25,14 @@ def get_static_html(file_name):
     # 拼接file_name所在的路径 '/static/html/file_name'
     if file_name != 'favicon.ico':
         file_name = 'html/' + file_name
-
     # 使用file_path去查找指定路径下的静态html
-    return current_app.send_static_file(file_name)
+    response = make_response(current_app.send_static_file(file_name))
+
+    # 生成csrf_token
+    csrf_token = generate_csrf()
+    # 添加cookie["csrf_token"]
+    response.set_cookie("csrf_token", csrf_token)
+
+    return response
+
+
