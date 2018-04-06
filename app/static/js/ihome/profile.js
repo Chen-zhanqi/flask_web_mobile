@@ -22,8 +22,8 @@ $(document).ready(function () {
         $(this).ajaxSubmit({
             url:"/user/avatar",
             type:"post",
-            headers:{
-                "X-CSRFToken":getCookie("csrf-token")
+            headers: {
+            "X-CSRFToken": getCookie('csrf_token')
             },
             dataType: "json",
             success: function (resp) {
@@ -39,7 +39,39 @@ $(document).ready(function () {
             }
         })
     })
-    // TODO: 管理用户名修改的逻辑
+    // 管理用户名修改的逻辑
+    $("#form-name").submit(function (e) {
+        //1.组织默认表单行为
+        e.preventDefault();
+        //2.获取用户名参数并校验
+        var name = $("#user-name").val();
+        if (!name) {
+            alert("请填写用户名！");
+            return;
+        }
+        //3.向后端发送数据
+        $.ajax({
+            url:"/user/name",
+            type:"post",
+            data: JSON.stringify({name: name}),
+            contentType: "application/json",
+            headers: {
+            "X-CSRFToken": getCookie('csrf_token')
+            },
+            dataType: "json",
+            success: function (data) {
+                if ("0" == data.errno) {
+                    $(".error-msg").hide();
+                    showSuccessMsg();
+                } else if ("4001" == data.errno) {
+                    $(".error-msg").show();
+                } else if ("4101" == data.errno) {
+                    location.href = "/login.html";
+                }
+            }
 
-})
+        })
+    })
+
+});
 

@@ -71,7 +71,7 @@ def register():
         db.session.commit()
     except Exception as e:
         logging.error(e)
-        db.rollback()
+        db.session.rollback()
         return jsonify(errno=RET.DATAEXIST, errmsg='手机号已存在')
         # 缓存到session
     session['user_id'] = new_user.id

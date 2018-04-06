@@ -79,3 +79,32 @@ def upload_avatar():
         # 4. 返回用户头像地址
         avatar_url = constants.QINIU_DOMIN_PREFIX + image_name
         return jsonify(errno=RET.OK, errmsg='图片上传成功', data={"avatar_url": avatar_url})
+
+
+@user.route("/name", methods=['POST'])
+@login_required
+def set_user_name():
+    """
+    设置用户名
+    1.获取前端提交的数据,并判断数据是否有值
+    2.查询出指定user并更新 `name` 属性
+    3.返回修改结果
+    :return:
+    """
+    # 1.获取前端数据
+    json_dict = request.get_json()
+    name = json_dict['name']
+    if name is None:
+        return jsonify(errno=RET.PARAMERR, errmsg="参数错误")
+
+    # 2.查询出指定user并更新name属性
+    try:
+        User.query.filter_by(id=g.user_id).update({'name': name})
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        logging.error(e)
+        return jsonify(errno=RET.DBERR, errmsg='更新数据出错')
+    else:
+        # 3.返回修改结果
+        return jsonify(errno=RET.OK, errmsg='修改成功')
