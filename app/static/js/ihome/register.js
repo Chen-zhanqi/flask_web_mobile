@@ -60,6 +60,8 @@ function sendSMSCode() {
         dataType:"json",
         success:function (resp) {
             if (resp.errno == "0"){
+                // 隐藏错误提示
+                $(".error-msg").hide();
                 // 倒计时60秒，60秒后允许用户再次点击发送短信验证码的按钮
                 var num = 60;
                 //设置一个计时器

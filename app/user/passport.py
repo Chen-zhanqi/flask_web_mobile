@@ -82,7 +82,7 @@ def register():
 
 
 # 登录 /session
-@user.route('/session', methods=['POST'])
+@user.route('/sessions', methods=['POST'])
 def login():
     """
     1.获取参数
@@ -99,7 +99,6 @@ def login():
     dict_json = request.get_json()
     mobile = dict_json.get('mobile')
     password = dict_json.get('password')
-
     # 2.判断参数是否有值
     if not all([mobile, password]):
         return jsonify(errno=RET.PARAMERR, errmsg="参数不完整")
