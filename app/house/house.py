@@ -8,6 +8,7 @@
 
 import logging
 import re
+import datetime
 
 from flask import request, jsonify, g, session
 
@@ -167,26 +168,63 @@ def house_list():
     # 打印参数
     print("area_id=%s,sd=%s,ed=%s,sk=%s,page=%s" % (area_id, start_date_str, end_date_str, sort_key, page))
 
+    # 参数校验
+    try:
+        page = int(page)
+    except Exception as e:
+        logging.error(e)
+        return jsonify(errno=RET.PARAMERR, errmsg='参数错误')
+
+    # 对日期进行相关处理
+    try:
+        start_date = None
+        end_date = None
+        if start_date_str:
+            start_date = datetime.datetime.strptime(start_date_str, '%Y-%m-%d')
+        if end_date_str:
+            end_date = datetime.datetime.strptime(end_date_str, '%Y-%m-%d')
+        # 如果开始时间大于或者等于结束时间,就报错
+        if start_date and end_date:
+            assert start_date < end_date, Exception('开始时间大于结束时间')
+    except Exception as e:
+        logging.error(e)
+        return jsonify(errno=RET.PARAMERR, errmsg='日期错误')
+
+    # 如果区域id存在
+    if area_id:
+        if sort_key == "booking":
+            # 订单量从高到低
+            houses_query = House.query.filter(House.area_id == area_id).order_by(House.order_count.desc())
+        elif sort_key == "price-inc":
+            # 价格从低到高
+            houses_query = House.query.filter(House.area_id == area_id).order_by(House.price.asc())
+        elif sort_key == "price-des":
+            # 价格从高到低
+            houses_query = House.query.filter(House.area_id == area_id).order_by(House.price.desc())
+        else:
+            # 默认以最新的排序
+            houses_query = House.query.filter(House.area_id == area_id).order_by(House.create_time.desc())
     # 查询数据
     # houses_list = House.query.all()
 
     # 分页查询数据
     # 查询数据
-    if sort_key == "booking":
-        # 订单量从高到低
-        houses_query = House.query.order_by(House.order_count.desc())
-    elif sort_key == "price-inc":
-        # 价格从低到高
-        houses_query = House.query.order_by(House.price.asc())
-    elif sort_key == "price-des":
-        # 价格从高到低
-        houses_query = House.query.order_by(House.price.desc())
     else:
-        # 默认以最新的排序
-        houses_query = House.query.order_by(House.create_time.desc())
+        if sort_key == "booking":
+            # 订单量从高到低
+            houses_query = House.query.order_by(House.order_count.desc())
+        elif sort_key == "price-inc":
+            # 价格从低到高
+            houses_query = House.query.order_by(House.price.asc())
+        elif sort_key == "price-des":
+            # 价格从高到低
+            houses_query = House.query.order_by(House.price.desc())
+        else:
+            # 默认以最新的排序
+            houses_query = House.query.order_by(House.create_time.desc())
 
     # 使用paginate进行分页
-    house_pages = houses_query.paginate(int(page), constants.HOUSE_LIST_PAGE_CAPACITY, False)
+    house_pages = houses_query.paginate(page, constants.HOUSE_LIST_PAGE_CAPACITY, False)
     # 获取当前页对象
     houses_list = house_pages.items
     # 获取总页数
