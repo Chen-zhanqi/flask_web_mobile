@@ -9,7 +9,7 @@
 import logging
 import re
 
-from flask import request, jsonify, g
+from flask import request, jsonify, g, session
 
 from app.house import houses
 
@@ -199,3 +199,47 @@ def upload_house_pic(house_id):
     # 返回数据
     image_url = constants.QINIU_DOMIN_PREFIX + image_name
     return jsonify(errno=RET.OK, errmsg='OK', data={'url': image_url})
+
+
+@houses.route('/<int:house_id>')
+def house_detail(house_id):
+    """
+    房屋详情
+    :param house_id:
+    :return:
+    """
+    # 前端在房屋详情页面展示时，如果浏览页面的用户不是该房屋的房东，则展示预定按钮，否则不展示，
+    # 所以需要后端返回登录用户的user_id
+    # 尝试获取用户登录的信息，若登录，则返回给前端登录用户的user_id，否则返回user_id=-1
+    # 判断参数是否有值
+    if not house_id:
+        return jsonify(errno=RET.PARAMERR, errmsg='参数缺失')
+
+    user_id = session.get('user_id', -1)
+
+    # 先从redis缓存中取
+    try:
+        house_info = redis_store.get('house_info_' + house_id)
+    except Exception as e:
+        house_info = None
+        logging.error(e)
+
+    # 如果有值,那么返回数据
+    if house_info:
+        logging.info('get house info from redis')
+        return jsonify(errno=RET.OK, errmsg='OK', data={"user_id": user_id, "house": eval(house_info)})
+
+    # 没有从缓存中取到,查询数据)库
+    house = House.query.filter_by(id=house_id).first()
+    if not house:
+        return jsonify(errno=RET.NODATA, errmsg='未查询到房屋信息')
+
+    # 将数据缓存到redis中
+    house_dict = house.to_full_dict()
+    try:
+        redis_store.set('house_info_'+house_id, house_dict, constants.HOUSE_DETAIL_REDIS_EXPIRE_SECOND)
+    except Exception as e:
+        logging.error(e)
+
+    # 返回数据
+    return jsonify(errno=RET.OK, errmsg='OK', data={"user_id": user_id, "house": house_dict})
