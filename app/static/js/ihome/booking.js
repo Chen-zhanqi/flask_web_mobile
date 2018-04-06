@@ -51,7 +51,13 @@ $(document).ready(function(){
     var queryData = decodeQuery();
     var houseId = queryData["hid"];
 
-    // TODO: 获取房屋的基本信息
-
+    // 获取房屋的基本信息
+    $.get("/house/" + houseId, function(resp){
+        if (0 == resp.errno) {
+            $(".house-info>img").attr("src", resp.data.house.img_urls[0]);
+            $(".house-text>h3").html(resp.data.house.title);
+            $(".house-text>p>span").html((resp.data.house.price/100.0).toFixed(0));
+        }
+    });
     // TODO: 订单提交
 })
