@@ -84,7 +84,7 @@ def send_sms_code():
 
     # 4. 验证图片码
     try:
-        real_image_code = redis_store.get('ImageCode:' + image_code_id).decode()
+        real_image_code = redis_store.get('ImageCode:' + image_code_id)
     except Exception as e:
         logging.error(e)
         return jsonify(errno=RET.DBERR, errmsg="查询数据异常")

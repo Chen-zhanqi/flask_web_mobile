@@ -28,12 +28,10 @@ def register():
     6. 返回用户信息
     :return:
     """
-    print("进入了register")
     # 1.获取参数 手机号 密码 短信验证码
     dict_json = request.get_json()
     if not dict_json:
         return jsonify(errno=RET.PARAMERR, errmsg='参数不完整')
-    print(dict_json)
     mobile = dict_json['mobile']
     sms_code = dict_json['phonecode']
     password = dict_json['password']
@@ -53,7 +51,7 @@ def register():
         return jsonify(errno=RET.DATAERR, errmsg='短信验证码已过期')
 
     # 4. 验证对比,并删除验证码
-    if real_sms_code.decode() != str(sms_code):
+    if real_sms_code != str(sms_code):
         return jsonify(errno=RET.DATAERR, errmsg='短信验证码无效')
 
     # 删除短信验证码
@@ -80,5 +78,3 @@ def register():
 
     # 返回用户信息
     return jsonify(errno=RET.OK, errmsg='OK')
-
-

@@ -40,7 +40,8 @@ def create_app(config_name):
     bootstrap.init_app(app)
 
     global redis_store
-    redis_store = redis.StrictRedis(host=config[config_name].REDIS_HOST, port=config[config_name].REDIS_PORT)
+    # decode_responses=True: 解决获取的值类型是bytes字节问题
+    redis_store = redis.StrictRedis(host=config[config_name].REDIS_HOST, port=config[config_name].REDIS_PORT, db=0, decode_responses=True)
 
     # 开启CSRF保护
     CSRFProtect(app)
