@@ -184,11 +184,24 @@ def house_list():
         if end_date_str:
             end_date = datetime.datetime.strptime(end_date_str, '%Y-%m-%d')
         # 如果开始时间大于或者等于结束时间,就报错
+        print(start_date)
+        print(end_date)
         if start_date and end_date:
             assert start_date < end_date, Exception('开始时间大于结束时间')
     except Exception as e:
         logging.error(e)
         return jsonify(errno=RET.PARAMERR, errmsg='日期错误')
+
+    # 尝试从缓存获取
+    try:
+        redis_key = "houses_%s_%s_%s_%s" % (area_id, start_date_str, end_date_str, sort_key)
+        response_data = redis_store.hget(redis_key, page)
+        if response_data:
+            logging.info('load data from redis')
+            return jsonify(errno=RET.OK, errmsg='获取成功', data=eval(response_data))
+    except Exception as e:
+        logging.error(e)
+
 
     # 如果区域id存在
     if area_id:
@@ -234,6 +247,26 @@ def house_list():
     houses_dict = []
     for house_each in houses_list:
         houses_dict.append(house_each.to_basic_dict())
+
+    # 提示 response_data 用于缓存
+    response_data = {"total_page": total_page, "houses": houses_dict}
+    # 如果当前page小于总页数,则表明有数据
+    if page <= total_page:
+        try:
+            # 生成缓存用的key
+            redis_key = "houses_%s_%s_%s_%s" % (area_id, start_date_str, end_date_str, sort_key)
+            # 获取 redis_store 的 pipeline 对象,其可以一次可以做多个redis操作
+            pipe = redis_store.pipeline()
+            # 开启事务
+            pipe.multi()
+            # 缓存数据
+            pipe.hset(redis_key, page, response_data)
+            # 设置保存数据的有效期
+            pipe.expire(redis_key, constants.HOUSE_LIST_REDIS_EXPIRES)
+            # 提交事务
+            pipe.execute()
+        except Exception as e:
+            logging.error(e)
 
     # return jsonify(errno=RET.OK, errmsg='请求成功', data={"total_page": 1, "houses": houses_dict})
     return jsonify(errno=RET.OK, errmsg='请求成功', data={"total_page": total_page, "houses": houses_dict})
