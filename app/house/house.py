@@ -148,6 +148,47 @@ def save_new_house():
     return jsonify(errno=RET.OK, errmsg='OK', data={'house_id': house.id})
 
 
+@houses.route("", methods=['GET'])
+def house_list():
+    """
+    首页搜索房屋
+    :return:
+    """
+    # 获取所有的参数
+    args = request.args
+    area_id = args.get('aid', '')
+    start_date_str = args.get('sd', '')
+    end_date_str = args.get('ed', '')
+
+    # booking(订单量), price-inc(低到高), price-des(高到低),
+    sort_key = args.get('sk', 'new')
+    page = args.get('p', '1')
+
+    # 打印参数
+    print("area_id=%s,sd=%s,ed=%s,sk=%s,page=%s" % (area_id, start_date_str, end_date_str, sort_key, page))
+
+    # 查询数据
+    # houses_list = House.query.all()
+
+    # 分页查询数据
+    # 查询数据
+    houses_query = House.query
+    # 使用paginate进行分页
+    house_pages = houses_query.paginate(page, constants.HOUSE_LIST_PAGE_CAPACITY, False)
+    # 获取当前页对象
+    houses_list = house_pages.items
+    # 获取总页数
+    total_page = house_pages.pages
+
+    # 将查询结果转成字符串
+    houses_dict = []
+    for house in houses_list:
+        houses_dict.append(house.to_basic_dict())
+
+    # return jsonify(errno=RET.OK, errmsg='请求成功', data={"total_page": 1, "houses": houses_dict})
+    return jsonify(errno=RET.OK, errmsg='请求成功', data={"total_page": total_page, "houses": houses_dict})
+
+
 @houses.route('/<int:house_id>/images', methods=['POST'])
 @login_required
 def upload_house_pic(house_id):
@@ -243,7 +284,7 @@ def house_detail(house_id):
     # 将数据缓存到redis中
     house_dict = house.to_full_dict()
     try:
-        redis_store.set('house_info_'+house_id, house_dict, constants.HOUSE_DETAIL_REDIS_EXPIRE_SECOND)
+        redis_store.set('house_info_' + house_id, house_dict, constants.HOUSE_DETAIL_REDIS_EXPIRE_SECOND)
     except Exception as e:
         logging.error(e)
 
@@ -284,7 +325,7 @@ def house_index():
 
     # 缓存到redis中
     try:
-        redis_store.set('home_page_house_info', houses_dict,constants.HOME_PAGE_DATA_REDIS_EXPIRES)
+        redis_store.set('home_page_house_info', houses_dict, constants.HOME_PAGE_DATA_REDIS_EXPIRES)
     except Exception as e:
         logging.error(e)
 

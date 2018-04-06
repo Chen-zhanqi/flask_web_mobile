@@ -44,7 +44,27 @@ function updateHouseData(action) {
         sk:sortKey,
         p:next_page
     };
-    // TODO: 获取房屋列表信息
+    // 获取房屋列表信息
+    $.get("/house", params, function(resp){
+        house_data_querying = false;
+        if ("0" == resp.errno) {
+            // 如果总页数为0，代表没有查询出来数据
+            if ("0" == resp.data.total_page) {
+                $(".house-list").html("暂时没有符合您查询的房屋信息。");
+            } else {
+                // 记录总页数
+                total_page = resp.data.total_page;
+                // 判断 action，根据 action 确定如果显示数据
+                if ("renew" == action) {
+                    cur_page = 1;
+                    $(".house-list").html(template("house-list-tmpl", {houses:resp.data.houses}));
+                } else {
+                    cur_page = next_page;
+                    $(".house-list").append(template("house-list-tmpl", {houses: resp.data.houses}));
+                }
+            }
+        }
+    });
 }
 
 $(document).ready(function(){
@@ -60,7 +80,7 @@ $(document).ready(function(){
 
 
     // 获取筛选条件中的城市区域信息
-    $.get("/api/v1.0/areas", function(data){
+    $.get("/house/areas", function(data){
         if ("0" == data.errno) {
             var areaId = queryData["aid"];
             if (areaId) {
@@ -79,7 +99,7 @@ $(document).ready(function(){
             }
             // 在页面添加好城区选项信息后，更新展示房屋列表信息
             updateHouseData("renew");
-            var windowHeight = $(window).height()
+            var windowHeight = $(window).height();
             // 为窗口的滚动添加事件函数
             window.onscroll=function(){
                 // var a = document.documentElement.scrollTop==0? document.body.clientHeight : document.documentElement.clientHeight;
@@ -154,4 +174,4 @@ $(document).ready(function(){
             $(".filter-title-bar>.filter-title").eq(2).children("span").eq(0).html($(this).html());
         }
     })
-})
+});

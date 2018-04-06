@@ -90,8 +90,22 @@ $(document).ready(function(){
         paginationClickable: true
     });
 
-    // TODO: 获取城区信息,获取完毕之后需要设置城区按钮点击之后相关操作
+    // 获取城区信息,获取完毕之后需要设置城区按钮点击之后相关操作
+    $.get("/house/areas", function(resp){
+        if ("0" == resp.errno) {
+            $(".area-list").html(template("area-list-tmpl", {areas:resp.data}));
 
+            $(".area-list a").click(function(e){
+                // 将选择的城区的内容设置到城区的按钮上
+                $("#area-btn").html($(this).html());
+                // 设置 search-btn的属性，将选择的城区记录起来
+                $(".search-btn").attr("area-id", $(this).attr("area-id"));
+                $(".search-btn").attr("area-name", $(this).html());
+                // 隐藏弹出的框
+                $("#area-modal").modal("hide");
+            });
+        }
+    });
     // TODO: 城区按钮点击之后相关操作
     $(".area-list a").click(function(e){
         $("#area-btn").html($(this).html());
