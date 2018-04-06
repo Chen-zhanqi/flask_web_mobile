@@ -9,4 +9,4 @@ from flask import Blueprint
 
 user = Blueprint('user', __name__)
 
-from app.user import verifycode, profile
+from app.user import verifycode, profile, passport

@@ -19,7 +19,7 @@ from app.models import User
 from app import db, constants
 
 
-@user.route('/users')
+@user.route('/users', methods=['GET'])
 @login_required
 def get_user_profile():
     """

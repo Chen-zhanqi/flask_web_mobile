@@ -57,7 +57,7 @@ def get_image_code():
     return response
 
 
-@user.route("/smscode/", methods=["POST"])
+@user.route("/smscode", methods=["POST"])
 def send_sms_code():
     # 1.获取参数
     # image_code = request.args['text']
@@ -84,7 +84,7 @@ def send_sms_code():
 
     # 4. 验证图片码
     try:
-        real_image_code = redis_store.get('ImageCode_' + image_code_id)
+        real_image_code = redis_store.get('ImageCode:' + image_code_id).decode()
     except Exception as e:
         logging.error(e)
         return jsonify(errno=RET.DBERR, errmsg="查询数据异常")
@@ -98,12 +98,26 @@ def send_sms_code():
 
     # 5.删除本地图片验证码
     try:
-        redis_store.delete("ImageCode_"+image_code_id)
+        redis_store.delete("ImageCode_" + image_code_id)
     except Exception as e:
         logging.error(e)
         return jsonify(errno=RET.DATAERR, errmsg="删除本地图片验证码失败")
     # 6. 生成短信验证码
-    sms_code = "%04d" %random.randint(0, 10000)
+    sms_code = "%04d" % random.randint(0, 10000)
     print("要发送的短信验证码:", sms_code)
+    print(type(constants.SMS_CODE_REDIS_EXPIRES))
+    # 6.1 将短信验证码存入redis中
+    try:
+        redis_store.set("SMSCode_" + mobile, sms_code, constants.SMS_CODE_REDIS_EXPIRES, )
+    except Exception as e:
+        logging.error(e)
+        return jsonify(errno=RET.DBERR, errmsg="保存短信验证码失败")
+    # 6.2 通过第三方平台云通讯发送短信验证码
+    # result = CCP().send_template_sms(mobile, [sms_code, constants.SMS_CODE_REDIS_EXPIRES / 60], '1')
+    # if result == 0:
+    #     return jsonify(errno=RET.OK, errmsg='发送验证码成功')
+    # else:
+    #     return jsonify(errno=RET.THIRDERR, errmsg='发送验证码失败')
+
     # 7.发送短信验证码，由云通讯完成
     return jsonify(errno=RET.OK, errmsg="发送验证码成功")
