@@ -7,4 +7,6 @@
 
 from flask import Blueprint
 
-house = Blueprint('house', __name__)
+houses = Blueprint('houses', __name__)
+
+from app.house import house

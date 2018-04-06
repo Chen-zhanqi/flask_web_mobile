@@ -134,6 +134,7 @@ def login():
 @user.route("/session", methods=['DELETE'])
 @login_required
 def logout():
+    print("111111111")
     session.pop("name", None)
     session.pop("mobile", None)
     session.pop("user_id", None)

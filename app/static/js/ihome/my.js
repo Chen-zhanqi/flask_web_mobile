@@ -8,8 +8,8 @@ function logout() {
     $.ajax({
         url:"/user/session",
         type:"delete",
-        header:{
-            "X-CSRFToken":getCookie("csrf_token")
+        headers: {
+            "X-CSRFToken": getCookie("csrf_token")
         },
         dataType:"json",
         success:function (resp) {

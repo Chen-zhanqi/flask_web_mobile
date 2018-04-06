@@ -136,7 +136,7 @@ def set_auth():
         return jsonify(errno=RET.OK, errmsg='认证信息保存成功')
 
 
-@user.route('/user/auth')
+@user.route('/auth')
 @login_required
 def get_auth():
     """

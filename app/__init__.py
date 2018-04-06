@@ -59,8 +59,8 @@ def create_app(config_name):
     from app.web_html import html_blue
     app.register_blueprint(html_blue)
 
-    from app.house import house
-    app.register_blueprint(house, url_prefix='/house')
+    from app.house import houses
+    app.register_blueprint(houses, url_prefix='/house')
 
     from app.order import order
     app.register_blueprint(order, url_prefix='/order')
