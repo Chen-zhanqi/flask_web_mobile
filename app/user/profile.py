@@ -108,3 +108,53 @@ def set_user_name():
     else:
         # 3.返回修改结果
         return jsonify(errno=RET.OK, errmsg='修改成功')
+
+
+@user.route("/auth", methods=['POST'])
+@login_required
+def set_auth():
+    """
+    实名认证
+    :return:
+    """
+    # 1. 获取参数并校验
+    json_dict = request.get_json()
+    real_name = json_dict['real_name']
+    id_card = json_dict['id_card']
+    if not all([real_name, id_card]):
+        return jsonify(errno=RET.PARAMERR, errmsg='参数错误')
+    # 2. 获取当前用户id并更新数据
+    user_id = g.user_id
+    try:
+        User.query.filter_by(id=user_id).update({'real_name': real_name, 'id_card': id_card})
+        db.session.commit()
+    except Exception as e:
+        logging.error(e)
+        db.session.rollback()
+        return jsonify(errno=RET.DBERR, errmsg='认证信息保存失败')
+    else:
+        return jsonify(errno=RET.OK, errmsg='认证信息保存成功')
+
+
+@user.route('/user/auth')
+@login_required
+def get_auth():
+    """
+    获取用户实名认证信息
+    :return:
+    """
+    # 1. 获取用户id
+    user_id = g.user_id
+    # 2. 查询用户信息
+    try:
+        login_user = User.query.filter_by(id=user_id).first()
+    except Exception as e:
+        logging.error(e)
+        return jsonify(errno=RET.DBERR, errmsg='数据查询错误')
+
+    # 如果用户不存在
+    if login_user is None:
+        return jsonify(errno=RET.SESSIONERR, errmsg='用户不存在')
+    # 3. 返回信息
+    return jsonify(errno=RET.OK, errmsg='OK', data=login_user.auth_to_dict())
+

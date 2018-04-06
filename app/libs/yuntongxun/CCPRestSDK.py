@@ -9,13 +9,13 @@
 #  in the file PATENTS.  All contributing project authors may
 #  be found in the AUTHORS file in the root of the source tree.
 
-from hashlib import md5
 import base64
 import datetime
-import urllib.request
 import json
-from app.libs.yuntongxun.SDK.xmltojson import xmltojson
-from xml.dom import minidom
+import urllib.request
+from hashlib import md5
+
+from app.libs.yuntongxun.xmltojson import xmltojson
 
 
 class REST:
