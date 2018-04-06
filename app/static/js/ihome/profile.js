@@ -12,8 +12,21 @@ function getCookie(name) {
 }
 
 $(document).ready(function () {
-    // TODO: 在页面加载完毕向后端查询用户的信息
-
+    // 在页面加载完毕向后端查询用户的信息
+    $.get("/user/users", function(resp){
+        // 用户未登录
+        if ("4101" == resp.errno) {
+            location.href = "/login.html";
+        }
+        // 查询到了用户的信息
+        else if ("0" == resp.errno) {
+            $("#user-avatar").attr("src", resp.data.avartar);
+            $("#user-name").val(resp.data.name);
+            if (resp.data.avatar) {
+                $("#user-avatar").attr("src", resp.data.avatar);
+            }
+        }
+    }, "json");
     // 管理上传用户头像表单的行为
     $("#form-avatar").submit(function (e) {
         //1.禁止浏览器对于表单的默认行为
@@ -38,7 +51,7 @@ $(document).ready(function () {
                 }
             }
         })
-    })
+    });
     // 管理用户名修改的逻辑
     $("#form-name").submit(function (e) {
         //1.组织默认表单行为
