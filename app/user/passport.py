@@ -131,6 +131,16 @@ def login():
     return jsonify(errno=RET.OK, errmsg='登录成功')
 
 
+@user.route("/session")
+def check_login():
+    name = session.get('name')
+    user_id = session.get('user_id')
+    if not name:
+        return jsonify(errno=RET.SESSIONERR, errmsg='用户未登录')
+    else:
+        return jsonify(errno=RET.OK, errmsg='用户已登录', data={'name': name, 'user_id': user_id})
+
+
 @user.route("/session", methods=['DELETE'])
 @login_required
 def logout():
