@@ -58,7 +58,7 @@ function goToSearchPage(th) {
 }
 
 $(document).ready(function(){
-    // TODO: 检查用户的登录状态
+    // 检查用户的登录状态
     $.get('/user/session', function (resp) {
         if ("0" == resp.errno) {
             $(".top-bar>.user-info>.user-name").html(resp.data.name)
@@ -67,9 +67,21 @@ $(document).ready(function(){
             $(".top-bar>.register-login").show()
         }
     }, 'json');
-    // TODO: 获取幻灯片要展示的房屋基本信息
+    // 获取幻灯片要展示的房屋基本信息
+    $.get("/house/index", function(resp){
+        if ("0" == resp.errno) {
+            $(".swiper-wrapper").html(template("swiper-houses-tmpl", {houses:resp.data}));
 
-    // TODO: 数据设置完毕后,需要设置幻灯片对象，开启幻灯片滚动
+            // 设置幻灯片对象，开启幻灯片滚动
+            var mySwiper = new Swiper ('.swiper-container', {
+                loop: true,
+                autoplay: 2000,
+                autoplayDisableOnInteraction: false,
+                pagination: '.swiper-pagination',
+                paginationClickable: true
+            });
+        }
+    });
     var mySwiper = new Swiper ('.swiper-container', {
         loop: true,
         autoplay: 2000,

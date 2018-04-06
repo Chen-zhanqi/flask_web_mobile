@@ -195,7 +195,13 @@ def upload_house_pic(house_id):
         logging.error(e)
         db.session.rollback()
         return jsonify(errno=RET.DBERR, errmsg="保存房屋图片失败")
-
+    # 删除缓存的前五房屋信息
+    try:
+        redis_store.delete("home_page_house_info")
+    except Exception as e:
+        logging.error(e)
+        db.session.rollback(e)
+        return jsonify(errno=RET.DBERR, errmsg="删除首页房屋缓存失败")
     # 返回数据
     image_url = constants.QINIU_DOMIN_PREFIX + image_name
     return jsonify(errno=RET.OK, errmsg='OK', data={'url': image_url})
@@ -243,3 +249,44 @@ def house_detail(house_id):
 
     # 返回数据
     return jsonify(errno=RET.OK, errmsg='OK', data={"user_id": user_id, "house": house_dict})
+
+
+@houses.route('/index')
+def house_index():
+    """
+    获取首页推荐房屋信息
+    :return:
+    """
+    # 先从redis中加载数据
+    try:
+        house_info = redis_store.get('home_page_house_info')
+    except Exception as e:
+        house_info = None
+        logging.error(e)
+    if house_info:
+        return jsonify(errno=RET.OK, errmsg='OK', data=eval(house_info))
+
+    # 从数组库中加载数据
+    try:
+        index_houses = House.query.order_by(House.order_count.desc()).limit(constants.HOME_PAGE_MAX_HOUSES).all()
+    except Exception as e:
+        logging.error(e)
+        return jsonify(errno=RET.DBERR, errmsg='数据查询失败')
+
+    # 如果数据库中没有数据
+    if not index_houses:
+        return jsonify(errno=RET.NODATA, errmsg='未查询到数据')
+
+    # 拼接到数组中
+    houses_dict = []
+    for house in index_houses:
+        houses_dict.append(house.to_basic_dict())
+
+    # 缓存到redis中
+    try:
+        redis_store.set('home_page_house_info', houses_dict,constants.HOME_PAGE_DATA_REDIS_EXPIRES)
+    except Exception as e:
+        logging.error(e)
+
+    # 返回数据
+    return jsonify(errno=RET.OK, errmsg='OK', data=houses_dict)
