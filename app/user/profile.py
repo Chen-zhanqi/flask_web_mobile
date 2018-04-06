@@ -15,7 +15,7 @@ from app.utils.response_code import RET
 from app.utils.image_storage import storage
 from app.utils.common import login_required
 
-from app.models import User
+from app.models import User, House
 from app import db, constants
 
 
@@ -157,4 +157,27 @@ def get_auth():
         return jsonify(errno=RET.SESSIONERR, errmsg='用户不存在')
     # 3. 返回信息
     return jsonify(errno=RET.OK, errmsg='OK', data=login_user.auth_to_dict())
+
+
+@user.route('/houses')
+@login_required
+def user_houses():
+    """
+    获取用户房源信息
+    :return:
+    """
+    # 1.获取用户id
+    user_id = g.user_id
+    # 2.查询用户房源信息
+    try:
+        houses = House.query.filter(House.user_id == user_id).all()
+    except Exception as e:
+        current_app.logger.error(e)
+        return jsonify(errno=RET.DBERR, errmsg="查询数据失败")
+
+    house_li = []
+    for house in houses:
+        house_li.append(house.to_basic_dict())
+    # 3. 返回数据
+    return jsonify(errno=RET.OK, errmsg="OK", data=house_li)
 
