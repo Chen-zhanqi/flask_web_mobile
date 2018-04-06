@@ -2,6 +2,22 @@ function getCookie(name) {
     var r = document.cookie.match("\\b" + name + "=([^;]*)\\b");
     return r ? r[1] : undefined;
 }
+//登出操作
+function logout() {
+    $.ajax({
+        url:"/user/session",
+        type:"delete",
+        header:{
+            "X-CSRFToken":getCookie("csrf_token")
+        },
+        dataType:"json",
+        success:function (resp) {
+            if ("0" == resp.errno){
+                location.href = "/index.html";
+            }
+        }
+    })
+}
 
 $(document).ready(function() {
     $("#mobile").focus(function(){
@@ -36,7 +52,7 @@ $(document).ready(function() {
         //5.表单数据转化为json
         var jsonData = JSON.stringify(data);
         $.ajax({
-            url:"/user/sessions",
+            url:"/user/session",
             type:"POST",
             data:jsonData,
             contentType:"application/json",

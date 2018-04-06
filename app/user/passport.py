@@ -16,6 +16,7 @@ from app import redis_store
 
 from app.models import User
 from app import db
+from app.utils.common import login_required
 
 
 @user.route('/users', methods=['POST'])
@@ -82,7 +83,7 @@ def register():
 
 
 # 登录 /session
-@user.route('/sessions', methods=['POST'])
+@user.route('/session', methods=['POST'])
 def login():
     """
     1.获取参数
@@ -128,3 +129,12 @@ def login():
     session['name'] = login_user.name
 
     return jsonify(errno=RET.OK, errmsg='登录成功')
+
+
+@user.route("/session", methods=['DELETE'])
+@login_required
+def logout():
+    session.pop("name", None)
+    session.pop("mobile", None)
+    session.pop("user_id", None)
+    return jsonify(errno=RET.OK, errmsg="OK")

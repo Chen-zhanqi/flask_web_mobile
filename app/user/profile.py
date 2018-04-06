@@ -30,14 +30,14 @@ def get_user_profile():
     user_id = g.user_id
     # 2.查询该用户
     try:
-        user = User.query.filter_by(id=user_id).first()
+        login_user = User.query.filter_by(id=user_id).first()
     except Exception as e:
         logging.error(e)
         return jsonify(errno=RET.DBERR, errmsg="数据查询错误")
     if user is None:
         return jsonify(errno=RET.USERERR, errmsg="用户不存在")
 
-    return jsonify(errno=RET.OK, errmsg="OK", data=user.to_dict())
+    return jsonify(errno=RET.OK, errmsg="OK", data=login_user.to_dict())
 
 
 @user.route("/avatar", methods=['POST'])
