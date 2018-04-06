@@ -27,8 +27,43 @@ $(document).ready(function(){
             alert(resp.errmsg);
         }
     }, "json");
-    // TODO: 处理房屋基本信息提交的表单数据
+    // 处理房屋基本信息提交的表单数据
+    $("#form-house-info").submit(function (e) {
+        e.preventDefault();
+        // 房屋表单信息
+        var formData = {};
+        $(this).serializeArray().map(function (x) { formData[x.name] = x.value });
+        // 房屋设施信息
+        var facility = [];
+        $("input:checkbox:checked[name=facility]").each(function(i, x){ facility[i]=x.value });
+        formData.facility = facility;
 
+        $.ajax({
+            url: "/house",
+            type: "POST",
+            data: JSON.stringify(formData),
+            contentType:"application/json",
+            dataType: "json",
+            headers: {
+                "X-CSRFToken": getCookie("csrf_token")
+            },
+            success: function (resp) {
+                if ("4101" == resp.errno) {
+                    location.href = "/login.html";
+                } else if ("0" == resp.errno) {
+                    // 后端保存数据成功
+                    // 隐藏基本信息的表单
+                    $("#form-house-info").hide();
+                    // 显示上传图片的表单
+                    $("#form-house-image").show();
+                    // 设置图片表单对应的房屋编号那个隐藏字段
+                    $("#house-id").val(resp.data.house_id);
+                } else {
+                    alert(resp.errmsg);
+                }
+            }
+        })
+    })
     // TODO: 处理图片表单的数据
 
-})
+});

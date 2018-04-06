@@ -9,11 +9,11 @@
 import logging
 import re
 
-from flask import jsonify
+from flask import request, jsonify, g
 
 from app.house import houses
 
-from app.models import Area
+from app.models import Area, House, Facility
 from app import db
 
 from app.utils.response_code import RET
@@ -58,5 +58,92 @@ def get_areas_info():
     # 3. 返回数据
     return jsonify(errno=RET.OK, errmsg='获取成功', data=areas_list)
 
+
+@houses.route('', methods=['POST'])
+@login_required
+def save_new_house():
+    """
+    前端发送过来的json数据
+    {
+        "title":"",
+        "price":"",
+        "area_id":"1",
+        "address":"",
+        "room_count":"",
+        "acreage":"",
+        "unit":"",
+        "capacity":"",
+        "beds":"",
+        "deposit":"",
+        "min_days":"",
+        "max_days":"",
+        "facility":["7","8"]
+    }
+
+    :return:
+    """
+    # 1.获取用户id
+    user_id = g.user_id
+    # 2. 获取数据
+    json_dict = request.get_json()
+    if not json_dict:
+        return jsonify(errno=RET.PARAMERR, errmsg='请输入参数')
+    # 3.参数校验
+    title = json_dict.get('title')  # 房屋标题
+    price = json_dict.get('price')  # 每晚价格
+    address = json_dict.get('address')  # 所在城区
+    area_id = json_dict.get('area_id')  # 详细地址
+    room_count = json_dict.get('room_count')  #出租房间数目
+    acreage = json_dict.get('acreage')  # 房屋面积
+    unit = json_dict.get('unit')  # 户型描述
+    capacity = json_dict.get('capacity')  # 宜住人数
+    beds = json_dict.get('beds')  # 卧床配置
+    deposit = json_dict.get('deposit')  # 押金数额
+    min_days = json_dict.get('min_days')  # 最少入住天数
+    max_days = json_dict.get('max_days')  # 最多入住天数
+
+    if not all(
+            [title, price, address, area_id, room_count, acreage, unit, capacity, beds, deposit, min_days, max_days]):
+        return jsonify(errno=RET.PARAMERR, errmsg='参数缺失')
+
+    # 数字信息处理，保证信息小数点后两位不丢失
+    try:
+        price = int(float(price) * 100)
+        deposit = int(float(deposit) * 100)
+    except Exception as e:
+        logging.error(e)
+        return jsonify(errno=RET.PARAMERR, errmsg='参数错误')
+
+    # 4. 设置数据到模型
+    house = House()
+    house.user_id = user_id
+    house.area_id = area_id
+    house.title = title
+    house.price = price
+    house.address = address
+    house.room_count = room_count
+    house.acreage = acreage
+    house.unit = unit
+    house.capacity = capacity
+    house.beds = beds
+    house.deposit = deposit
+    house.min_days = min_days
+    house.max_days = max_days
+
+    # 5. 设置设施信息
+    facility = json_dict.get('facility')
+    if facility:
+        facilities = Facility.query.filter(Facility.id.in_(facility)).all()
+        house.facilities = facilities
+    # 6.向数据库提交信息
+    try:
+        db.session.add(house)
+        db.session.commit()
+    except Exception as e:
+        logging.error(e)
+        db.session.rollback()
+        return jsonify(errno=RET.DBERR, errmsg='保存房屋信息失败')
+
+    return jsonify(errno=RET.OK, errmsg='OK', data={'house_id': house.id})
 
 
