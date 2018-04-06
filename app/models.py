@@ -9,6 +9,7 @@ from app import constants
 from app import db
 
 from datetime import datetime
+from werkzeug.security import generate_password_hash, check_password_hash
 
 
 class BaseModel(object):
@@ -31,6 +32,37 @@ class User(BaseModel, db.Model):
 
     houses = db.relationship("House", backref="user")  # 用户发布的房屋
     orders = db.relationship("Order", backref="user")  # 用户下的订单
+
+    @property
+    def password(self):
+        raise AttributeError('can not read')
+
+    @password.setter
+    def password(self, value):
+        # value 是外界传入的密码的明文数据
+        self.password_hash = generate_password_hash(value)
+
+    def check_password(self, password):
+        """校验密码:如果匹配成功返回True.反之，返回False"""
+        return check_password_hash(self.password_hash, password)
+
+    def to_dict(self):
+        """封装用户信息数据"""
+        response = {
+            'name': self.name,
+            # 当self.avatar_url有值时就取self.avatar_url，没有值时取''
+            'avartar': constants.QINIU_DOMIN_PREFIX + (self.avatar_url if self.avatar_url else ''),
+            'mobile': self.mobile,
+            'user_id': self.id
+        }
+        return response
+
+    def auth_to_dict(self):
+        response = {
+            'real_name': self.real_name,
+            'id_card': self.id_card
+        }
+        return response
 
 
 class Area(BaseModel, db.Model):

@@ -6,6 +6,7 @@
 '''
 
 import logging
+import re
 
 from app.user import user
 from flask import request, jsonify, session
@@ -62,7 +63,7 @@ def register():
 
     # 5. 将用户数据保存到数据库
     new_user = User(mobile=mobile, name=mobile)
-    new_user.password_hash = password
+    new_user.password = password
 
     try:
         db.session.add(new_user)
@@ -78,3 +79,53 @@ def register():
 
     # 返回用户信息
     return jsonify(errno=RET.OK, errmsg='OK')
+
+
+# 登录 /session
+@user.route('/session', methods=['POST'])
+def login():
+    """
+    1.获取参数
+    2.判断参数是否有值
+    3.判断手机号是否合法
+    4.查询数据库用户信息
+    5.用户不存在判断
+    6.校验密码
+    7.使用session保存用户信息
+    :return:
+    """
+
+    # 1.获取参数
+    dict_json = request.get_json()
+    mobile = dict_json.get('mobile')
+    password = dict_json.get('password')
+
+    # 2.判断参数是否有值
+    if not all([mobile, password]):
+        return jsonify(errno=RET.PARAMERR, errmsg="参数不完整")
+
+    # 3.判断手机号是否合法
+    if not re.match(u"^1[34578]\d{9}$", mobile):
+        return jsonify(errno=RET.PARAMERR, errmsg="手机号格式不正确")
+
+    # 4.查询数据库用户信息
+    try:
+        login_user = User.query.filter_by(mobile=mobile).first()
+    except Exception as e:
+        logging.error(e)
+        return jsonify(errno=RET.DBERR, errmsg='数据库查询错误')
+
+    # 5.用户不存在判断
+    if login_user is None:
+        return jsonify(errno=RET.USERERR, errmsg='用户不存在')
+
+    # 6.校验密码
+    if not login_user.check_password(password):
+        return jsonify(errno=RET.LOGINERR, errmsg='密码错误')
+
+    # 7.使用session保存用户信息
+    session['user_id'] = login_user.id
+    session['mobile'] = login_user.mobile
+    session['name'] = login_user.name
+
+    return jsonify(errno=RET.OK, errmsg='登录成功')
