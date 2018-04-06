@@ -147,6 +147,7 @@ $(document).ready(function(){
             updateFilterDateDisplay();
         }
     });
+    // 更新筛选
     $(".display-mask").on("click", function(e) {
         $(this).hide();
         $filterItem.removeClass('active');

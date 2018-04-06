@@ -172,7 +172,19 @@ def house_list():
 
     # 分页查询数据
     # 查询数据
-    houses_query = House.query
+    if sort_key == "booking":
+        # 订单量从高到低
+        houses_query = House.query.order_by(House.order_count.desc())
+    elif sort_key == "price-inc":
+        # 价格从低到高
+        houses_query = House.query.order_by(House.price.asc())
+    elif sort_key == "price-des":
+        # 价格从高到低
+        houses_query = House.query.order_by(House.price.desc())
+    else:
+        # 默认以最新的排序
+        houses_query = House.query.order_by(House.create_time.desc())
+
     # 使用paginate进行分页
     house_pages = houses_query.paginate(int(page), constants.HOUSE_LIST_PAGE_CAPACITY, False)
     # 获取当前页对象
