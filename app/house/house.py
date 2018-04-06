@@ -174,7 +174,7 @@ def house_list():
     # 查询数据
     houses_query = House.query
     # 使用paginate进行分页
-    house_pages = houses_query.paginate(page, constants.HOUSE_LIST_PAGE_CAPACITY, False)
+    house_pages = houses_query.paginate(int(page), constants.HOUSE_LIST_PAGE_CAPACITY, False)
     # 获取当前页对象
     houses_list = house_pages.items
     # 获取总页数
@@ -182,8 +182,8 @@ def house_list():
 
     # 将查询结果转成字符串
     houses_dict = []
-    for house in houses_list:
-        houses_dict.append(house.to_basic_dict())
+    for house_each in houses_list:
+        houses_dict.append(house_each.to_basic_dict())
 
     # return jsonify(errno=RET.OK, errmsg='请求成功', data={"total_page": 1, "houses": houses_dict})
     return jsonify(errno=RET.OK, errmsg='请求成功', data={"total_page": total_page, "houses": houses_dict})
