@@ -13,10 +13,11 @@ from flask import request, jsonify, g
 
 from app.house import houses
 
-from app.models import Area, House, Facility
+from app.models import Area, House, Facility, HouseImage
 from app import db
 
 from app.utils.response_code import RET
+from app.utils.image_storage import storage
 from app import redis_store
 from app import constants
 from app.utils.common import login_required
@@ -93,7 +94,7 @@ def save_new_house():
     price = json_dict.get('price')  # 每晚价格
     address = json_dict.get('address')  # 所在城区
     area_id = json_dict.get('area_id')  # 详细地址
-    room_count = json_dict.get('room_count')  #出租房间数目
+    room_count = json_dict.get('room_count')  # 出租房间数目
     acreage = json_dict.get('acreage')  # 房屋面积
     unit = json_dict.get('unit')  # 户型描述
     capacity = json_dict.get('capacity')  # 宜住人数
@@ -147,3 +148,54 @@ def save_new_house():
     return jsonify(errno=RET.OK, errmsg='OK', data={'house_id': house.id})
 
 
+@houses.route('/<int:house_id>/images', methods=['POST'])
+@login_required
+def upload_house_pic(house_id):
+    """
+    上传房源图片
+    :param house_id: 房源id
+    :return:
+    """
+    # 1. 获取图片文件
+    image_file = request.files.get('house_image')
+    if not image_file:
+        return jsonify(errno=RET.PARAMERR, errmsg="未选择图片")
+
+    # 2. 尝试查询房屋数据
+    try:
+        house = House.query.filter_by(id=house_id).first()
+    except Exception as e:
+        logging.error(e)
+        return jsonify(errno=RET.DBERR, errmsg='查询房屋数据失败')
+    if not house:
+        return jsonify(errno=RET.NODATA, errmsg='未查询到对应房屋')
+
+    # 3. 使用七牛上传图片
+    image_data = image_file.read()
+    try:
+        image_name = storage(image_data)
+    except Exception as e:
+        logging.error(e)
+        return jsonify(errno=RET.THIRDERR, errmsg="上传图片失败")
+
+    # 4. 判断房屋是否有主图片，如果没有，则设置
+    if not house.index_image_url:
+        house.index_image_url = image_name
+        db.session.add(house)
+
+    # 5. 生成房屋图片模型并保存至数据数据库
+    house_image = HouseImage()
+    house_image.house_id = house_id
+    house_image.url = image_name
+
+    try:
+        db.session.add(house_image)
+        db.session.commit()
+    except Exception as e:
+        logging.error(e)
+        db.session.rollback()
+        return jsonify(errno=RET.DBERR, errmsg="保存房屋图片失败")
+
+    # 返回数据
+    image_url = constants.QINIU_DOMIN_PREFIX + image_name
+    return jsonify(errno=RET.OK, errmsg='OK', data={'url': image_url})

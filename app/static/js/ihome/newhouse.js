@@ -63,7 +63,29 @@ $(document).ready(function(){
                 }
             }
         })
+    });
+    // 处理图片表单的数据
+    $("#form-house-image").submit(function (e) {
+        e.preventDefault();
+        var house_id = $("#house-id").val();
+        // 使用jquery.form插件，对表单进行异步提交，通过这样的方式，可以添加自定义的回调函数
+        $(this).ajaxSubmit({
+            url: "/house/"+house_id+"/images",
+            type: "post",
+            headers: {
+                "X-CSRFToken": getCookie("csrf_token")
+            },
+            success: function (resp) {
+                if ("4101" == resp.errno) {
+                    location.href = "/login.html";
+                } else if ("0" == resp.errno) {
+                    // 在前端中添加一个img标签，展示上传的图片
+                    $(".house-image-cons").append('<img src="'+ resp.data.url+'">');
+                } else {
+                    alert(resp.errmsg);
+                }
+            }
+        })
     })
-    // TODO: 处理图片表单的数据
 
 });
