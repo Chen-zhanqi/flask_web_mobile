@@ -6,6 +6,7 @@
 .idea
 migrations
 dump.rdb
+config.py
 [Bb]in
 [Ii]nclude
 [Ll]ib

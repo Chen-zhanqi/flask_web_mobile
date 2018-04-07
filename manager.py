@@ -10,7 +10,7 @@ import os
 from flask_script import Manager
 from app import db
 from flask_migrate import Migrate, MigrateCommand
-from app import models
+from app import models # 导入模型类以便生成迁移等
 from app import create_app
 
 
