@@ -126,3 +126,5 @@ venv.bak/
 /app/static/js/._.DS_Store
 /dump.rdb
 ._.DS_Store
+/config.py
+/.qiniu_pythonsdk_hostscache.json
