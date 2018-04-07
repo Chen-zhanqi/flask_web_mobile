@@ -25,8 +25,12 @@ function showErrorMsg() {
 }
 
 $(document).ready(function(){
-    // TODO: 判断用户是否登录
-
+    // 判断用户是否登录
+    $.get('/user/session', function (resp) {
+        if ("0" != resp.errno) {
+            location.href = '/'
+        }
+    }, 'json');
     $(".input-daterange").datepicker({
         format: "yyyy-mm-dd",
         startDate: "today",
@@ -59,5 +63,40 @@ $(document).ready(function(){
             $(".house-text>p>span").html((resp.data.house.price/100.0).toFixed(0));
         }
     });
-    // TODO: 订单提交
-})
+    // 订单提交
+    $(".submit-btn").on("click", function() {
+        if ($(".order-amount>span").html()) {
+            //1. 使按钮失效，防止重复点击提交订单
+            $(this).prop("disabled", true);
+            //2. 获取参数
+            var startDate = $("#start-date").val();
+            var endDate = $("#end-date").val();
+            var data = {
+                "house_id":houseId,
+                "start_date":startDate,
+                "end_date":endDate
+            };
+            //3. 发送请求
+            $.ajax({
+                url:"/order",
+                type:"POST",
+                data: JSON.stringify(data),
+                contentType: "application/json",
+                dataType: "json",
+                headers:{
+                    "X-CSRFToken":getCookie("csrf_token")
+                },
+                success: function (resp) {
+                    $(this).prop("disabled", false);
+                    if ("4101" == resp.errno) {
+                        location.href = "/login.html";
+                    } else if ("4004" == resp.errno) {
+                        alert("房间已被抢定，请重新选择日期！");
+                    } else if ("0" == resp.errno) {
+                        location.href = "/orders.html";
+                    }
+                }
+            });
+        }
+    });
+});

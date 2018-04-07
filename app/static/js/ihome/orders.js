@@ -18,11 +18,44 @@ $(document).ready(function(){
     $('.modal').on('show.bs.modal', centerModals);      //当模态框出现的时候
     $(window).on('resize', centerModals);
 
-    // TODO: 查询房客订单
-
-    // TODO: 查询成功之后需要设置评论的相关处理
-    $(".order-comment").on("click", function(){
-        var orderId = $(this).parents("li").attr("order-id");
-        $(".modal-comment").attr("order-id", orderId);
+    // 查询房客订单
+    $.get("/user/orders?role=custom", function(resp){
+        if ("0" == resp.errno) {
+            $(".orders-list").html(template("orders-list-tmpl", {orders:resp.data.orders}));
+            // 评论处理
+            $(".order-comment").on("click", function(){
+                var orderId = $(this).parents("li").attr("order-id");
+                $(".modal-comment").attr("order-id", orderId);
+            });
+            $(".modal-comment").on("click", function(){
+                var orderId = $(this).attr("order-id");
+                var comment = $("#comment").val();
+                if (!comment) return;
+                var data = {
+                    comment:comment
+                };
+                // 处理评论
+                $.ajax({
+                    url:"/order/"+orderId+"/comment",
+                    type:"PUT",
+                    data:JSON.stringify(data),
+                    contentType:"application/json",
+                    dataType:"json",
+                    headers:{
+                        "X-CSRFToken":getCookie("csrf_token")
+                    },
+                    success:function (resp) {
+                        if ("4101" == resp.errno) {
+                            location.href = "/login.html";
+                        } else if ("0" == resp.errno) {
+                            $(".orders-list>li[order-id="+ orderId +"]>div.order-content>div.order-text>ul li:eq(4)>span").html("已完成");
+                            $("ul.orders-list>li[order-id="+ orderId +"]>div.order-title>div.order-operate").hide();
+                            $("#comment-modal").modal("hide");
+                        }
+                    }
+                });
+            });
+        }
     });
+
 });

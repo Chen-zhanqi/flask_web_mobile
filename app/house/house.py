@@ -14,7 +14,7 @@ from flask import request, jsonify, g, session
 
 from app.house import houses
 
-from app.models import Area, House, Facility, HouseImage
+from app.models import Area, House, Facility, HouseImage, Order
 from app import db
 
 from app.utils.response_code import RET
@@ -202,39 +202,43 @@ def house_list():
     except Exception as e:
         logging.error(e)
 
-
     # 如果区域id存在
+    filters = []
     if area_id:
-        if sort_key == "booking":
-            # 订单量从高到低
-            houses_query = House.query.filter(House.area_id == area_id).order_by(House.order_count.desc())
-        elif sort_key == "price-inc":
-            # 价格从低到高
-            houses_query = House.query.filter(House.area_id == area_id).order_by(House.price.asc())
-        elif sort_key == "price-des":
-            # 价格从高到低
-            houses_query = House.query.filter(House.area_id == area_id).order_by(House.price.desc())
-        else:
-            # 默认以最新的排序
-            houses_query = House.query.filter(House.area_id == area_id).order_by(House.create_time.desc())
+        filters.append(House.area_id == area_id)
+
+        # 定义数组保存冲突的订单
+        conflict_order = None
+        if start_date and end_date:
+            # 如果订单的开始时间 < 结束时间 and 订单的结束时间 > 开始时间
+            conflict_order = Order.query.filter(Order.begin_date < end_date, Order.end_date > start_date)
+        elif start_date:
+            # 订单的结束时间 > 开始时间
+            conflict_order = Order.query.filter(Order.end_date > start_date)
+        elif end_date:
+            # 订单的开始时间 < 结束时间
+            conflict_order = Order.query.filter(Order.begin_date < end_date)
+
+        if conflict_order:
+            # 取到冲突订单的房屋id
+            conflict_house_id = [order.house_id for order in conflict_order]
+            # 添加条件:查询出来的房屋不包括冲突订单中的房屋id
+            filters.append(House.id.notin_(conflict_house_id))
+
     # 查询数据
     # houses_list = House.query.all()
-
-    # 分页查询数据
-    # 查询数据
+    if sort_key == "booking":
+        # 订单量从高到低
+        houses_query = House.query.filter(*filters).order_by(House.order_count.desc())
+    elif sort_key == "price-inc":
+        # 价格从低到高
+        houses_query = House.query.filter(*filters).order_by(House.price.asc())
+    elif sort_key == "price-des":
+        # 价格从高到低
+        houses_query = House.query.filter(*filters).order_by(House.price.desc())
     else:
-        if sort_key == "booking":
-            # 订单量从高到低
-            houses_query = House.query.order_by(House.order_count.desc())
-        elif sort_key == "price-inc":
-            # 价格从低到高
-            houses_query = House.query.order_by(House.price.asc())
-        elif sort_key == "price-des":
-            # 价格从高到低
-            houses_query = House.query.order_by(House.price.desc())
-        else:
-            # 默认以最新的排序
-            houses_query = House.query.order_by(House.create_time.desc())
+        # 默认以最新的排序
+        houses_query = House.query.filter(*filters).order_by(House.create_time.desc())
 
     # 使用paginate进行分页
     house_pages = houses_query.paginate(page, constants.HOUSE_LIST_PAGE_CAPACITY, False)
@@ -346,10 +350,9 @@ def house_detail(house_id):
         return jsonify(errno=RET.PARAMERR, errmsg='参数缺失')
 
     user_id = session.get('user_id', -1)
-
     # 先从redis缓存中取
     try:
-        house_info = redis_store.get('house_info_' + house_id)
+        house_info = redis_store.get('house_info_' + str(house_id))
     except Exception as e:
         house_info = None
         logging.error(e)
@@ -367,7 +370,7 @@ def house_detail(house_id):
     # 将数据缓存到redis中
     house_dict = house.to_full_dict()
     try:
-        redis_store.set('house_info_' + house_id, house_dict, constants.HOUSE_DETAIL_REDIS_EXPIRE_SECOND)
+        redis_store.set('house_info_' + str(house_id), house_dict, constants.HOUSE_DETAIL_REDIS_EXPIRE_SECOND)
     except Exception as e:
         logging.error(e)
 
